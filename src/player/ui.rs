@@ -125,13 +125,10 @@ fn audio_bar(player: &Arc<Player>) -> String {
 }
 
 /// The code for the interface itself.
-async fn interface(queue: Arc<Player>) -> eyre::Result<()> {
-    /// The total width of the UI.
-    const WIDTH: usize = 43;
-
-    /// The width of the progress bar, not including the borders (`[` and `]`) or padding.
-    const PROGRESS_WIDTH: usize = WIDTH - 16;
-
+///
+/// `volume_timer` is a bit strange, but it tracks how long the `volume` bar
+/// has been displayed for, so that it's only displayed for a certain amount of frames.
+async fn interface(player: Arc<Player>, volume_timer: Arc<AtomicUsize>) -> eyre::Result<()> {
     loop {
         let (mut main, len) = player
             .current
@@ -147,20 +144,10 @@ async fn interface(queue: Arc<Player>) -> eyre::Result<()> {
             })
             .format();
 
-        let volume = format!(
-            " Volume: {}% ",
-            ((queue.sink.volume() * 100.0).round() as usize).to_string()
-        );
-
-        if len > WIDTH - volume.len() {
-            main = format!("{}...{}", &main[..=WIDTH - volume.len()], volume);
+        if len > WIDTH {
+            main = format!("{}...", &main[..=WIDTH]);
         } else {
-            main = format!(
-                "{}{}{}",
-                main,
-                " ".repeat(WIDTH - volume.len() - len),
-                volume,
-            );
+            main = format!("{}{}", main, " ".repeat(WIDTH - len));
         }
 
         let timer = volume_timer.load(Ordering::Relaxed);
@@ -179,7 +166,6 @@ async fn interface(queue: Arc<Player>) -> eyre::Result<()> {
             format!("{}kip", "[s]".bold()),
             format!("{}ause", "[p]".bold()),
             format!("{}uit", "[q]".bold()),
-            format!("volume {}", "[+/-]".bold()),
         ];
 
         // Formats the menu properly
@@ -258,7 +244,7 @@ pub async fn start(
         // If it's modifying the volume, then we'll set the `volume_timer` to 1
         // so that the ui thread will know that it should show the audio bar.
         if messages == Messages::VolumeDown || messages == Messages::VolumeUp {
-            volume_timer.store(1.8, Ordering::Relaxed);
+            volume_timer.store(1, Ordering::Relaxed);
         }
 
         sender.send(messages).await?;
