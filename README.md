@@ -1,3 +1,9 @@
+This is a fork of [This](https://github.com/talwat/lowfi) project by [talwat](https://github.com/talwat).
+
+The main reasons for this forks existance are:
+- to be a place to work on features to be merged back
+- to keep my own UI, as I want different things from my ui then the origional repo does.
+
 # lowfi
 
 lowfi is a tiny rust app that serves a single purpose: play lofi.

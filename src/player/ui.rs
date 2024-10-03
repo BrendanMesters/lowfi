@@ -223,29 +223,18 @@ pub async fn start(
             KeyCode::Char(character) => match character {
                 // Ctrl+C
                 'c' if event.modifiers == KeyModifiers::CONTROL => break,
-
                 // Quit
                 'q' => break,
-
-                // Skip/Next
-                's' | 'n' if !queue.current.load().is_none() => Messages::Next,
-
-                // Pause
+                's' => Messages::Next,
                 'p' => Messages::Pause,
-
-                // Volume up & down
-                '+' | '=' => Messages::VolumeUp,
-                '-' | '_' => Messages::VolumeDown,
+                '=' => Messages::VolumeUp(10),
+                '+' => Messages::VolumeUp(1),
+                '-' => Messages::VolumeDown(10),
+                '_' => Messages::VolumeDown(1),
                 _ => continue,
             },
             _ => continue,
         };
-
-        // If it's modifying the volume, then we'll set the `volume_timer` to 1
-        // so that the ui thread will know that it should show the audio bar.
-        if messages == Messages::VolumeDown || messages == Messages::VolumeUp {
-            volume_timer.store(1, Ordering::Relaxed);
-        }
 
         sender.send(messages).await?;
     }

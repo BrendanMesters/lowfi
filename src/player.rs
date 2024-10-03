@@ -39,10 +39,10 @@ pub enum Messages {
     Pause,
 
     /// Increase the volume of playback
-    VolumeUp,
+    VolumeUp(usize),
 
     /// Decrease the volume of playback
-    VolumeDown,
+    VolumeDown(usize),
 }
 
 const TIMEOUT: Duration = Duration::from_secs(8);
@@ -190,16 +190,22 @@ impl Player {
                         player.sink.pause();
                     }
                 }
-                Messages::VolumeUp => {
-                    // Increase the volume, if possible.
-                    if player.sink.volume() < 1.0 {
-                        player.sink.set_volume(player.sink.volume() + 0.1);
+                Messages::VolumeUp(v) => {
+                    // Increase the volume, if possible
+                    let change = (v as f32) / 100.0;
+                    if player.sink.volume() <= 1.0 - change {
+                        player.sink.set_volume(player.sink.volume() + change);
+                    } else {
+                        player.sink.set_volume(1.0)
                     }
                 }
-                Messages::VolumeDown => {
-                    // Decreaes the volume, if possible.
-                    if player.sink.volume() > 0.0 {
-                        player.sink.set_volume(player.sink.volume() - 0.1);
+                Messages::VolumeDown(v) => {
+                    let change = (v as f32) / 100.0;
+                    // Decreaes the volume, if possible
+                    if player.sink.volume() >= change {
+                        player.sink.set_volume(player.sink.volume() - change);
+                    } else {
+                        player.sink.set_volume(0.0)
                     }
                 }
             }
